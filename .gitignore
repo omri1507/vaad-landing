@@ -1,0 +1,7 @@
+# source design files (not needed for the live site)
+*.psd
+font.zip
+_analysis/
+.claude/
+.DS_Store
+**/.DS_Store
