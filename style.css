@@ -33,7 +33,6 @@
   --white:#ffffff;
   --ink:#001FFF;
   --glow:#97D2FF;                    /* news-section top glow (sampled)    */
-  --band-shadow:rgba(0,0,16,.22);    /* inner shadow the strips cast       */
 
   --font:"Ploni","Assistant","Heebo",system-ui,"Segoe UI",Arial,sans-serif;
 }
@@ -145,14 +144,26 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   background:var(--blue) url("assets/hero-illustration.png") center top / cover no-repeat;
   aspect-ratio:1920 / 648;
 }
-/* the inner shadow the header and the strip cast into the banner (from the PSD) */
+/* the inner shadow the header and the strip cast into the banner.
+   Alpha curve sampled straight off the PSD composite: it starts at .22 and
+   falls off convexly (a plain linear ramp reads ~13/255 too dark mid-way).
+   Desktop: 28px from the top, 22px from the strip. */
 .hero::before,
 .hero::after{
   content:"";position:absolute;left:0;right:0;
-  height:calc(32 * var(--s));pointer-events:none;z-index:1;
+  pointer-events:none;z-index:1;
+  --shadow-ramp:
+    rgba(0,0,16,.220)   0%,
+    rgba(0,0,16,.168)  15%,
+    rgba(0,0,16,.125)  30%,
+    rgba(0,0,16,.088)  45%,
+    rgba(0,0,16,.057)  60%,
+    rgba(0,0,16,.032)  75%,
+    rgba(0,0,16,.012)  90%,
+    rgba(0,0,16,0)    100%;
 }
-.hero::before{top:0;background:linear-gradient(to bottom,var(--band-shadow),transparent);}
-.hero::after{bottom:0;background:linear-gradient(to top,var(--band-shadow),transparent);}
+.hero::before{top:0;   height:calc(28 * var(--s));background:linear-gradient(to bottom,var(--shadow-ramp));}
+.hero::after {bottom:0;height:calc(22 * var(--s));background:linear-gradient(to top,   var(--shadow-ramp));}
 
 .hero-inner{
   position:relative;z-index:2;
@@ -240,7 +251,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 .benefits-title{
   margin:0 auto;color:var(--ink);font-weight:900;
   font-size:calc(77 * var(--s));   /* ink width 1088 == the icon row (1087) */
-  line-height:1;letter-spacing:.005em;
+  line-height:1;
   white-space:nowrap;
 }
 .chev-down{                        /* PSD “arrow” shape layer (57×34) */
@@ -274,7 +285,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   white-space:nowrap;          /* only the explicit <br> breaks — never 3+ lines */
   transition:color .18s ease;
 }
-.benefit-label .gt{margin-inline-start:calc(6 * var(--s));}
+.benefit-label .gt{margin-inline-start:0;}
 
 /* hover / focus / press feedback on the icons.
    box-shadow on a round element instead of filter:drop-shadow — a filter
@@ -410,7 +421,8 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
     background-size:cover;background-position:center top;
     aspect-ratio:550 / 569;
   }
-  .hero::before,.hero::after{height:calc(26 * var(--s));}
+  .hero::before{height:calc(32 * var(--s));opacity:.91;}   /* PSD mobile: a0≈.20 */
+  .hero::after {height:calc(30 * var(--s));opacity:.73;}   /* PSD mobile: a0≈.16 */
   .hero-inner{padding:0;position:static;}
   .video-frame{
     position:absolute;z-index:2;
