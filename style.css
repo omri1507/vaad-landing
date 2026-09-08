@@ -78,14 +78,15 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
     rgba(255,255,255,.9) 74%, rgba(255,255,255,0) 100%);
 }
 
-/* hamburger — inline SVG (PSD 77×46, three 10-px bars) so it can morph to an X */
+/* hamburger — inline SVG matching the PSD exactly:
+   box 77×46, three square-cornered bars 74×7 at y=2 / 20 / 38 */
 .menu-toggle{
   display:flex;align-items:center;justify-content:center;
   padding:calc(6 * var(--s));margin:calc(-6 * var(--s));
 }
 .burger{width:calc(77 * var(--s));height:auto;overflow:visible;}
 .burger-line{
-  stroke:var(--white);stroke-width:10;stroke-linecap:round;
+  fill:var(--white);
   transform-box:fill-box;transform-origin:center;
   transition:transform .3s cubic-bezier(.5,-0.35,.35,1.4), opacity .2s ease;
 }
@@ -427,8 +428,23 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   .benefits{padding-block:calc(15 * var(--s)) calc(41 * var(--s));}
   .benefits-title{font-size:calc(23 * var(--s));white-space:nowrap;}
   .chev-down{margin:calc(8 * var(--s)) auto calc(15 * var(--s));width:calc(19 * var(--s));}
-  .benefit-list{width:calc(496 * var(--s));flex-wrap:nowrap;justify-content:space-between;}
-  .benefit{width:calc(106 * var(--s));gap:calc(5 * var(--s));}
+  /* the design shows 3 icons (Ø106, pitch 152, margins 71/69);
+     the 4th sits just off-screen and is revealed by swiping sideways */
+  .benefit-list{
+    width:100%;max-width:none;margin-inline:0;
+    flex-wrap:nowrap;justify-content:flex-start;
+    gap:calc(46 * var(--s));
+    padding-inline:calc(71 * var(--s)) calc(69 * var(--s));
+    overflow-x:auto;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    scroll-snap-type:x proximity;
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  .benefit-list::-webkit-scrollbar{display:none;}
+  .benefit{
+    width:calc(106 * var(--s));gap:calc(5 * var(--s));
+    flex:none;scroll-snap-align:center;
+  }
   .benefit-ico{width:calc(106 * var(--s));height:calc(106 * var(--s));}
   .benefit-label{font-size:calc(23 * var(--s));}
 
