@@ -7,6 +7,11 @@
      --s = 1px            when viewport >= design width  (1:1)
      --s = 100vw/1920px   when narrower  (uniform down-scale)
    Mobile (<=880px) switches to the 550-px mobile artboard.
+
+   Design bands (desktop PSD y):
+     header      0 –  95      hero art   95 – 743
+     strip     743 – 832      benefits  829 – 1225
+     news     1222 – 1744     footer   1744 – 1989
    ========================================================= */
 
 /* ---------- Ploni family (extracted from font.zip) ---------- */
@@ -24,16 +29,17 @@
   --s: min(1px, 100vw / 1920);      /* proportional unit, desktop artboard */
 
   --blue:#001FFF;                    /* primary brand blue  (0,31,255)     */
-  --blue-deep:#0412C4;
   --pink:#FF4DB2;                    /* accent  (chevrons / 2nd word)      */
   --white:#ffffff;
   --ink:#001FFF;
+  --glow:#97D2FF;                    /* news-section top glow (sampled)    */
+  --band-shadow:rgba(0,0,16,.22);    /* inner shadow the strips cast       */
 
-  --font: "Ploni","Assistant","Heebo",system-ui,"Segoe UI",Arial,sans-serif;
+  --font:"Ploni","Assistant","Heebo",system-ui,"Segoe UI",Arial,sans-serif;
 }
 
 *,*::before,*::after{box-sizing:border-box;}
-html{-webkit-text-size-adjust:100%;}
+html{-webkit-text-size-adjust:100%;scrollbar-gutter:stable;}
 body{
   margin:0;font-family:var(--font);color:var(--ink);
   background:var(--white);line-height:1.3;
@@ -47,16 +53,12 @@ button{font:inherit;cursor:pointer;border:0;background:none;color:inherit;}
 .wrap{width:min(100vw,1920px);margin-inline:auto;}
 
 /* the “ >” of the PSD: a literal glyph in the same Ploni-UltraBold run,
-   coloured pink. In the RTL line the bidi algorithm mirrors it to point
-   left, exactly like the design (Ploni draws it as a solid triangle). */
-.gt{
-  color:var(--pink);
-  font-weight:900;
-  margin-inline-start:calc(10 * var(--s));
-}
+   coloured pink. RTL bidi mirrors it, and Ploni draws it as a solid triangle. */
+.gt{color:var(--pink);font-weight:900;margin-inline-start:calc(10 * var(--s));}
 
 /* =========================================================
-   HEADER   (PSD: h96 · home 63×52 @x46 · logo @x1543 · bar @x1797)
+   HEADER   (PSD h96 · home 63×52 @x46 · logo 212×65 · divider 2×96 @x1772
+             · burger 77×46 @x1797, right margin 46)
    ========================================================= */
 .site-header{background:var(--blue);position:sticky;top:0;z-index:50;}
 body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawer */
@@ -66,26 +68,30 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   padding-inline:calc(46 * var(--s));
 }
 .home-link img{height:calc(52 * var(--s));width:auto;}
-.header-right{display:flex;align-items:center;gap:calc(22 * var(--s));}
-.logo img{height:calc(64 * var(--s));width:auto;}
-.header-divider{width:2px;height:calc(66 * var(--s));background:rgba(255,255,255,.55);}
+.header-right{display:flex;align-items:center;gap:calc(20 * var(--s));}
+.logo img{height:calc(65 * var(--s));width:auto;}
+.header-divider{                             /* PSD: a line that fades at both ends */
+  width:calc(2 * var(--s));min-width:1px;
+  height:calc(96 * var(--s));
+  background:linear-gradient(to bottom,
+    rgba(255,255,255,0) 0%, rgba(255,255,255,.9) 26%,
+    rgba(255,255,255,.9) 74%, rgba(255,255,255,0) 100%);
+}
 
-/* hamburger — inline SVG so it can morph to an X */
+/* hamburger — inline SVG (PSD 77×46, three 10-px bars) so it can morph to an X */
 .menu-toggle{
   display:flex;align-items:center;justify-content:center;
   padding:calc(6 * var(--s));margin:calc(-6 * var(--s));
 }
-.burger{
-  width:calc(40 * var(--s));height:auto;overflow:visible;
-}
+.burger{width:calc(77 * var(--s));height:auto;overflow:visible;}
 .burger-line{
-  stroke:var(--white);stroke-width:3.4;stroke-linecap:round;
+  stroke:var(--white);stroke-width:10;stroke-linecap:round;
   transform-box:fill-box;transform-origin:center;
   transition:transform .3s cubic-bezier(.5,-0.35,.35,1.4), opacity .2s ease;
 }
-.menu-toggle[aria-expanded="true"] .burger-top{transform:translateY(7px) rotate(45deg);}
+.menu-toggle[aria-expanded="true"] .burger-top{transform:translateY(18px) rotate(45deg);}
 .menu-toggle[aria-expanded="true"] .burger-mid{opacity:0;transform:scaleX(.2);}
-.menu-toggle[aria-expanded="true"] .burger-bot{transform:translateY(-7px) rotate(-45deg);}
+.menu-toggle[aria-expanded="true"] .burger-bot{transform:translateY(-18px) rotate(-45deg);}
 
 /* =========================================================
    SIDE MENU  (hamburger drawer, slides in from the right in RTL)
@@ -116,8 +122,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 .side-menu.open .side-menu-panel{transform:none;}
 .side-menu-link{
   display:flex;align-items:center;justify-content:space-between;
-  gap:16px;
-  padding:18px 2px;
+  gap:16px;padding:18px 2px;
   color:var(--white);font-weight:900;font-size:20px;
   border-bottom:1px solid rgba(255,255,255,.2);
   opacity:0;transform:translateX(18px);
@@ -129,29 +134,36 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 .side-menu.open .side-menu-link:nth-of-type(2){transition-delay:.19s,.19s,0s,0s;}
 .side-menu-link:hover{padding-inline-start:12px;color:#dfe4ff;}
 .side-menu-link .gt{color:var(--pink);flex:none;margin:0;}
-@media (prefers-reduced-motion:reduce){
-  .side-menu-backdrop,.side-menu-panel,.side-menu-link,.burger-line{transition:none;}
-  .side-menu-link{opacity:1;transform:none;}
-}
 
 /* =========================================================
-   HERO   (PSD: illustration 1920×950 · video frame 967×608 @top134, centred-x)
+   HERO   (art is pre-cropped to the design band: 1920×648 = PSD y95–743.
+           video frame 967×608 sits 39px below the header)
    ========================================================= */
 .hero{
-  background:var(--blue) url("assets/hero-illustration.png") center top / 100% 100% no-repeat;
-  min-height:calc(950 * var(--s));
+  position:relative;
+  background:var(--blue) url("assets/hero-illustration.png") center top / cover no-repeat;
+  aspect-ratio:1920 / 648;
 }
+/* the inner shadow the header and the strip cast into the banner (from the PSD) */
+.hero::before,
+.hero::after{
+  content:"";position:absolute;left:0;right:0;
+  height:calc(32 * var(--s));pointer-events:none;z-index:1;
+}
+.hero::before{top:0;background:linear-gradient(to bottom,var(--band-shadow),transparent);}
+.hero::after{bottom:0;background:linear-gradient(to top,var(--band-shadow),transparent);}
+
 .hero-inner{
-  width:min(100vw,1920px);margin-inline:auto;
-  min-height:calc(950 * var(--s));
+  position:relative;z-index:2;
+  width:min(100vw,1920px);height:100%;margin-inline:auto;
   display:flex;align-items:flex-start;justify-content:center;
-  padding-top:calc(150 * var(--s));
+  padding-top:calc(39 * var(--s));
 }
-/* the exact “video frame” from the PSD (smart-object, 967×608), with the
+/* the exact “video frame” from the PSD (smart-object 967×608), with the
    video inset into its masked window (898×490 @ offset 34,34) */
 .video-frame{
   position:relative;margin:0;
-  width:calc(1000 * var(--s));
+  width:calc(967 * var(--s));
   aspect-ratio:967 / 608;
   background:url("assets/video-frame-overlay.png") center / 100% 100% no-repeat;
   filter:drop-shadow(0 0 calc(34 * var(--s)) rgba(0,120,255,.5));
@@ -161,85 +173,89 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   top:5.59%;left:3.52%;
   width:92.87%;height:80.59%;
   object-fit:cover;display:block;
-  border-radius:calc(82 * var(--s));   /* = PSD “mask frame” corner radius */
+  border-radius:calc(80 * var(--s));   /* = PSD “mask frame” corner radius */
   background:#000;
 }
-.play-btn{
+/* shown only if the browser refuses muted autoplay */
+.play-fallback{
   position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);
   width:calc(104 * var(--s));height:calc(104 * var(--s));border-radius:50%;
-  background:rgba(0,20,120,.32);
-  border:2px solid rgba(255,255,255,.9);
-  transition:transform .15s ease,background .15s ease;
+  background:rgba(0,20,120,.42);
+  border:calc(2 * var(--s)) solid rgba(255,255,255,.9);
+  z-index:3;transition:transform .15s ease,background .15s ease;
 }
-.play-btn::before{
+.play-fallback[hidden]{display:none;}
+.play-fallback::before{
   content:"";position:absolute;inset:0;margin:auto;width:0;height:0;
-  border-style:solid;border-width:calc(16 * var(--s)) 0 calc(16 * var(--s)) calc(26 * var(--s));
+  border-style:solid;
+  border-width:calc(16 * var(--s)) 0 calc(16 * var(--s)) calc(26 * var(--s));
   border-color:transparent transparent transparent #fff;
   transform:translateX(calc(4 * var(--s)));
 }
-.play-btn:hover{transform:translate(-50%,-50%) scale(1.08);background:rgba(0,20,120,.5);}
+.play-fallback:hover{transform:translate(-50%,-50%) scale(1.08);background:rgba(0,20,120,.6);}
 
-/* desktop: shrink the hero so hero + header + strip sit just under 100vh
-   and the white section peeks a little on first load */
-@media (min-width:881px){
-  .hero{
-    background-image:url("assets/hero-illustration.png");
-    background-size:cover;background-position:center top;
-    min-height:0;
-    height:calc(100vh - (96 * var(--s)) - (116 * var(--s)) - (58 * var(--s)));
-  }
-  .hero-inner{
-    min-height:0;height:100%;
-    align-items:center;
-    padding-top:0;
-  }
-  .video-frame{
-    width:auto;
-    height:min(calc(629 * var(--s)), 80%);
-    max-width:92%;
-  }
+/* sound toggle — the video autoplays muted */
+.sound-btn{
+  position:absolute;
+  bottom:calc(30 * var(--s));left:calc(58 * var(--s));
+  width:calc(64 * var(--s));height:calc(64 * var(--s));border-radius:50%;
+  background:rgba(0,16,90,.45);
+  border:calc(2 * var(--s)) solid rgba(255,255,255,.85);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s ease,transform .15s ease;
+  z-index:2;
 }
+.sound-btn:hover{background:rgba(0,16,90,.72);transform:scale(1.06);}
+.sound-btn svg{width:62%;height:62%;overflow:visible;}
+.sound-btn .spk{fill:#fff;}
+.sound-btn .wave{fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;opacity:0;transition:opacity .15s ease;}
+.sound-btn .mute-slash{stroke:#fff;stroke-width:2.6;stroke-linecap:round;transition:opacity .15s ease;}
+.sound-btn.is-on .wave{opacity:1;}
+.sound-btn.is-on .mute-slash{opacity:0;}
 
 /* =========================================================
-   BLUE STRIP   —  “תנאי ההסכם המלאים  >”   (PSD: band h89 · text 42px)
+   BLUE STRIP  “תנאי ההסכם המלאים >”   (PSD band y743–832 → h89, text 42px)
    ========================================================= */
 .strip{background:var(--blue);}
 .strip-link{
   width:min(100vw,1920px);margin-inline:auto;
+  height:calc(89 * var(--s));
   display:flex;align-items:center;justify-content:center;
-  gap:calc(16 * var(--s));
-  padding-block:calc(30 * var(--s));
+  gap:calc(19 * var(--s));
   color:var(--white);font-weight:500;
   font-size:calc(42 * var(--s));letter-spacing:.02em;
 }
-.chev{                                   /* PSD “arrow” shape layer */
-  width:calc(26 * var(--s));height:auto;flex:none;
-}
+.chev{width:calc(23 * var(--s));height:auto;flex:none;}   /* PSD arrow 23×25 */
 
 /* =========================================================
-   BENEFITS  (white)  (PSD: title 1086×56 @y842 · chevron 57×34 @y912
-                       · 4 icons Ø131, row 1087 wide @y981 · label 2 lines 33px)
+   BENEFITS  (PSD white band y829–1225 · headline ink y842–897 w1086
+              · chevron 57×34 @y912 · icons Ø131, row 1087 wide @y981
+              · labels @y1124)
    ========================================================= */
-.benefits{background:var(--white);text-align:center;padding-block:calc(55 * var(--s)) calc(60 * var(--s));}
+.benefits{
+  background:var(--white);text-align:center;
+  padding-block:0 calc(55 * var(--s));
+}
 .benefits-title{
   margin:0 auto;color:var(--ink);font-weight:900;
-  font-size:calc(60 * var(--s));line-height:1;letter-spacing:.005em;
+  font-size:calc(77 * var(--s));   /* ink width 1088 == the icon row (1087) */
+  line-height:1;letter-spacing:.005em;
   white-space:nowrap;
 }
-.chev-down{                              /* PSD “arrow” shape layer (57×34) */
-  display:block;margin:calc(18 * var(--s)) auto calc(34 * var(--s));
-  width:calc(58 * var(--s));height:auto;
+.chev-down{                        /* PSD “arrow” shape layer (57×34) */
+  display:block;margin:calc(6 * var(--s)) auto calc(35 * var(--s));
+  width:calc(57 * var(--s));height:auto;
 }
 .benefit-list{
-  width:calc(1120 * var(--s));max-width:100%;
+  width:calc(1087 * var(--s));max-width:100%;
   margin-inline:auto;
   display:flex;justify-content:space-between;align-items:flex-start;
 }
 .benefit-list > li{display:contents;}
 .benefit{
-  width:calc(150 * var(--s));
+  width:calc(131 * var(--s));
   display:flex;flex-direction:column;align-items:center;
-  gap:calc(14 * var(--s));
+  gap:calc(6 * var(--s));
   cursor:pointer;border-radius:calc(14 * var(--s));
   -webkit-tap-highlight-color:transparent;
 }
@@ -252,7 +268,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 .benefit-ico img{width:100%;height:100%;object-fit:contain;}
 .benefit-label{
   color:var(--ink);font-weight:900;
-  font-size:calc(33 * var(--s));line-height:1.08;
+  font-size:calc(29 * var(--s));line-height:.88;   /* 2-line ink = 42, as in the PSD */
   display:inline-block;
   white-space:nowrap;          /* only the explicit <br> breaks — never 3+ lines */
   transition:color .18s ease;
@@ -296,20 +312,12 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   text-align:center;
   animation:modalPop .2s cubic-bezier(.2,.8,.3,1) both;
 }
-.modal-title{
-  margin:0;color:var(--ink);font-weight:900;
-  font-size:26px;line-height:1.15;
-}
+.modal-title{margin:0;color:var(--ink);font-weight:900;font-size:26px;line-height:1.15;}
 .modal-title::after{
-  content:"";display:block;
-  width:44px;height:4px;border-radius:2px;
+  content:"";display:block;width:44px;height:4px;border-radius:2px;
   background:var(--pink);margin:14px auto 0;
 }
-.modal-text{
-  margin:18px 0 0;
-  color:#1b2444;font-weight:400;
-  font-size:16px;line-height:1.65;
-}
+.modal-text{margin:18px 0 0;color:#1b2444;font-weight:400;font-size:16px;line-height:1.65;}
 .modal-close{
   position:absolute;top:10px;left:12px;
   width:36px;height:36px;border-radius:50%;
@@ -320,47 +328,51 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 .modal-close:hover{background:rgba(0,31,255,.1);}
 @keyframes modalFade{from{opacity:0}to{opacity:1}}
 @keyframes modalPop{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){
-  .modal-backdrop,.modal-card{animation:none;}
-  .benefit,.benefit-ico,.benefit-label{transition:none;}
-}
 
 /* =========================================================
-   NEWS  (white + soft top glow)  (PSD: cards 340 wide · logo h61 · shot 340×284)
+   NEWS  (PSD band y1222–1744 · full-width top glow #97D2FF → white over 57px
+          · logo w251 @y1288 · shot 340×284 @y1358 · link 21px @y1656)
    ========================================================= */
 .news{
-  background:var(--white);
-  padding-block:calc(60 * var(--s)) calc(80 * var(--s));
-  background-image:radial-gradient(120% calc(120 * var(--s)) at 50% 0,rgba(120,170,255,.35),transparent 70%);
-  background-repeat:no-repeat;
+  background:
+    linear-gradient(to bottom, var(--glow) 0, var(--white) 100%)
+      top left / 100% calc(57 * var(--s)) no-repeat,
+    var(--white);
+  padding-block:calc(66 * var(--s)) calc(75 * var(--s));
 }
 .news-list{
   width:auto;max-width:100%;
   margin-inline:auto;
-  display:flex;justify-content:center;align-items:stretch;
-  gap:calc(130 * var(--s));
+  display:flex;justify-content:center;align-items:flex-start;
+  gap:calc(47 * var(--s));
 }
 .news-card{
   width:calc(340 * var(--s));
   display:flex;flex-direction:column;align-items:center;text-align:center;
-  gap:calc(16 * var(--s));
+  gap:calc(9 * var(--s));
 }
-.news-logo{height:calc(64 * var(--s));width:auto;object-fit:contain;}
+/* fixed logo box (PSD logos are all 251 wide, up to 61 tall) so the two
+   cards line up on the same baseline */
+.news-logo{
+  width:calc(251 * var(--s));height:calc(61 * var(--s));
+  object-fit:contain;object-position:center bottom;
+}
 .news-shot{
   width:100%;border:1px solid #e4e4e4;
   box-shadow:0 calc(8 * var(--s)) calc(22 * var(--s)) rgba(0,0,0,.10);
 }
 .news-link{
-  margin-top:auto;color:var(--ink);font-weight:900;
-  font-size:calc(23 * var(--s));letter-spacing:.02em;
+  margin-top:calc(14 * var(--s));
+  color:var(--ink);font-weight:900;
+  font-size:calc(21 * var(--s));letter-spacing:.02em;
   display:inline-flex;align-items:center;
 }
 .news-link:hover{opacity:.8;}
 
 /* =========================================================
-   FOOTER  (PSD: band · 4 social Ø89, pitch 127, centred @y1812)
+   FOOTER  (PSD band y1744–1989 · 4 social Ø89 @y1812, pitch 127)
    ========================================================= */
-.site-footer{background:var(--blue);padding-block:calc(66 * var(--s)) calc(88 * var(--s));}
+.site-footer{background:var(--blue);padding-block:calc(68 * var(--s)) calc(88 * var(--s));}
 .social{
   display:flex;justify-content:center;align-items:center;
   gap:calc(38 * var(--s));direction:ltr;
@@ -370,70 +382,78 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 
 /* =========================================================
    MOBILE  —  vaad_mobile_550x1200.psd   (artboard width 550)
+   Bands: header 0–95 · hero art 95–664 · strip 664–738
+          benefits 735–1000 · news 997–1583 · footer 1580–…
    ========================================================= */
 @media (max-width:880px){
   :root{ --s: min(1.12px, 100vw / 550); }
 
-  /* HEADER  (PSD: h95 · home 56×46 @x27 · logo @x222 · bar @x446) */
+  /* HEADER  (h95 · home 56×46 @x27 · logo 188×59 · divider 3×73 · burger 77×46) */
   .header-inner{height:calc(95 * var(--s));padding-inline:calc(27 * var(--s));}
   .home-link img{height:calc(46 * var(--s));}
-  .header-right{gap:calc(18 * var(--s));}
-  .logo img{height:calc(58 * var(--s));}
-  .header-divider{height:calc(60 * var(--s));}
-  .menu-toggle img{height:calc(44 * var(--s));}
+  .header-right{gap:calc(16 * var(--s));}
+  .logo img{height:calc(59 * var(--s));}
+  .header-divider{width:calc(3 * var(--s));height:calc(73 * var(--s));}
+  .burger{width:calc(77 * var(--s));}
 
-  /* HERO  (mobile art = rings + empty neon frame, 550×740;
-           the real <video> is dropped into the frame's window) */
+  /* HERO  (art pre-cropped to 550×569 = PSD y95–664; the real <video>
+           is dropped into the neon frame's window) */
   .hero{
-    position:relative;
     background-image:url("assets/hero-illustration-mobile.png");
     background-size:cover;background-position:center top;
-    min-height:0;aspect-ratio:550 / 740;
+    aspect-ratio:550 / 569;
   }
-  .hero-inner{min-height:0;height:100%;padding:0;position:static;}
+  .hero::before,.hero::after{height:calc(26 * var(--s));}
+  .hero-inner{padding:0;position:static;}
   .video-frame{
-    display:block;position:absolute;
-    left:6.55%;top:28.51%;width:86.73%;height:35.27%;
+    position:absolute;z-index:2;
+    left:6.545%;top:27.417%;width:86.727%;height:45.870%;
     aspect-ratio:auto;background:none;filter:none;border-radius:0;
   }
   .video-el{
     position:absolute;inset:0;width:100%;height:100%;
     border-radius:calc(37 * var(--s));   /* = PSD mobile “mask frame” radius */
   }
-  .play-btn{width:calc(120 * var(--s));height:calc(120 * var(--s));}
-
-  /* STRIP  (PSD: text 41px) */
-  .strip-link{font-size:calc(41 * var(--s));padding-block:calc(26 * var(--s));gap:calc(12 * var(--s));}
-  .chev{width:calc(22 * var(--s));height:calc(26 * var(--s));}
-
-  /* BENEFITS  (PSD mobile: title 330×37 · 3 icons Ø106 — here 4 → 2×2 wrap) */
-  .benefits{padding-block:calc(40 * var(--s)) calc(44 * var(--s));}
-  .benefits-title{font-size:calc(44 * var(--s));white-space:normal;max-width:calc(430 * var(--s));}
-  .chev-down{margin-block:calc(12 * var(--s)) calc(26 * var(--s));width:calc(26 * var(--s));height:calc(16 * var(--s));stroke-width:5;}
-  .benefit-list{
-    width:calc(430 * var(--s));
-    flex-wrap:wrap;justify-content:space-between;
-    row-gap:calc(34 * var(--s));
+  .sound-btn{
+    bottom:calc(14 * var(--s));left:calc(14 * var(--s));
+    width:calc(58 * var(--s));height:calc(58 * var(--s));
   }
-  .benefit{width:calc(190 * var(--s));gap:calc(12 * var(--s));}
-  .benefit-ico{width:calc(120 * var(--s));height:calc(120 * var(--s));}
-  .benefit-label{font-size:calc(32 * var(--s));}
 
-  /* NEWS  (mobile: single column) */
-  .news{padding-block:calc(36 * var(--s)) calc(52 * var(--s));}
-  .news-list{width:calc(440 * var(--s));flex-direction:column;align-items:center;row-gap:calc(56 * var(--s));}
-  .news-card{width:calc(440 * var(--s));gap:calc(20 * var(--s));}
-  .news-logo{height:calc(92 * var(--s));}
-  .news-link{font-size:calc(28 * var(--s));}
+  /* STRIP  (PSD band 664–738 → h74, text 41px) */
+  .strip-link{height:calc(74 * var(--s));font-size:calc(35 * var(--s));gap:calc(15 * var(--s));}
+  .chev{width:calc(21 * var(--s));}
 
-  /* FOOTER  (PSD mobile: 4 social Ø77, pitch 111) */
+  /* BENEFITS  (PSD band 735–1000 · headline ink w330 @y754 · icons Ø106 in ONE row) */
+  .benefits{padding-block:calc(15 * var(--s)) calc(41 * var(--s));}
+  .benefits-title{font-size:calc(23 * var(--s));white-space:nowrap;}
+  .chev-down{margin:calc(8 * var(--s)) auto calc(15 * var(--s));width:calc(19 * var(--s));}
+  .benefit-list{width:calc(496 * var(--s));flex-wrap:nowrap;justify-content:space-between;}
+  .benefit{width:calc(106 * var(--s));gap:calc(5 * var(--s));}
+  .benefit-ico{width:calc(106 * var(--s));height:calc(106 * var(--s));}
+  .benefit-label{font-size:calc(23 * var(--s));}
+
+  /* NEWS  (single column · glow 42px · logo w332 · shot 430 · link 26px) */
+  .news{
+    background:
+      linear-gradient(to bottom, var(--glow) 0, var(--white) 100%)
+        top left / 100% calc(42 * var(--s)) no-repeat,
+      var(--white);
+    padding-block:calc(55 * var(--s)) calc(60 * var(--s));
+  }
+  .news-list{width:calc(430 * var(--s));flex-direction:column;align-items:center;row-gap:calc(56 * var(--s));}
+  .news-card{width:calc(430 * var(--s));gap:calc(11 * var(--s));}
+  .news-logo{width:calc(332 * var(--s));height:calc(96 * var(--s));}
+  .news-link{font-size:calc(26 * var(--s));margin-top:calc(18 * var(--s));}
+
+  /* FOOTER  (4 social Ø77, pitch 111 → gap 34) */
   .site-footer{padding-block:calc(42 * var(--s)) calc(52 * var(--s));}
   .social{gap:calc(34 * var(--s));}
   .social img{width:calc(77 * var(--s));height:calc(77 * var(--s));}
 }
 
-/* very small phones: 2×2 benefits stay readable */
-@media (max-width:380px){
-  .benefit{width:47%;}
-  .benefits-title{font-size:calc(40 * var(--s));}
+@media (prefers-reduced-motion:reduce){
+  .modal-backdrop,.modal-card{animation:none;}
+  .benefit,.benefit-ico,.benefit-label,.burger-line,
+  .side-menu-backdrop,.side-menu-panel,.side-menu-link{transition:none;}
+  .side-menu-link{opacity:1;transform:none;}
 }
