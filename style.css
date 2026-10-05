@@ -49,7 +49,7 @@ a{color:inherit;text-decoration:none;}
 ul{list-style:none;margin:0;padding:0;}
 button{font:inherit;cursor:pointer;border:0;background:none;color:inherit;}
 
-.wrap{width:min(100vw,1920px);margin-inline:auto;}
+.wrap{width:min(100%,1920px);margin-inline:auto;}
 
 /* the “ >” of the PSD: a literal glyph in the same Ploni-UltraBold run,
    coloured pink. RTL bidi mirrors it, and Ploni draws it as a solid triangle. */
@@ -167,7 +167,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 
 .hero-inner{
   position:relative;z-index:2;
-  width:min(100vw,1920px);height:100%;margin-inline:auto;
+  width:min(100%,1920px);height:100%;margin-inline:auto;
   display:flex;align-items:flex-start;justify-content:center;
   padding-top:calc(39 * var(--s));
 }
@@ -209,7 +209,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
 /* sound toggle — the video autoplays muted */
 .sound-btn{
   position:absolute;
-  bottom:calc(30 * var(--s));left:calc(58 * var(--s));
+  bottom:calc(112 * var(--s));left:calc(62 * var(--s));   /* 28px inside the video's corner */
   width:calc(64 * var(--s));height:calc(64 * var(--s));border-radius:50%;
   background:rgba(0,16,90,.45);
   border:calc(2 * var(--s)) solid rgba(255,255,255,.85);
@@ -230,7 +230,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
    ========================================================= */
 .strip{background:var(--blue);}
 .strip-link{
-  width:min(100vw,1920px);margin-inline:auto;
+  width:min(100%,1920px);margin-inline:auto;
   height:calc(89 * var(--s));
   display:flex;align-items:center;justify-content:center;
   gap:calc(19 * var(--s));
@@ -246,7 +246,7 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
    ========================================================= */
 .benefits{
   background:var(--white);text-align:center;
-  padding-block:0 calc(55 * var(--s));
+  padding-block:0 calc(41 * var(--s));   /* +14 lives in the carousel padding */
 }
 .benefits-title{
   margin:0 auto;color:var(--ink);font-weight:900;
@@ -255,16 +255,50 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   white-space:nowrap;
 }
 .chev-down{                        /* PSD “arrow” shape layer (57×34) */
-  display:block;margin:calc(6 * var(--s)) auto calc(35 * var(--s));
+  display:block;margin:calc(6 * var(--s)) auto calc(21 * var(--s));   /* +14 in the carousel padding */
   width:calc(57 * var(--s));height:auto;
 }
-.benefit-list{
+.benefit-carousel{
+  position:relative;
   width:calc(1087 * var(--s));max-width:100%;
   margin-inline:auto;
-  display:flex;justify-content:space-between;align-items:flex-start;
 }
+/* exactly 4 benefits fit the 1087px row (4×131 + 3×188); the rest scroll in.
+   24px side / 14px vertical padding keeps the hover lift + glow from being
+   clipped by the scroller, without moving anything visible. */
+.benefit-list{
+  width:calc(100% + 48 * var(--s));margin-inline:calc(-24 * var(--s));
+  padding:calc(14 * var(--s)) calc(24 * var(--s));
+  display:flex;justify-content:flex-start;align-items:flex-start;
+  gap:calc(188 * var(--s));
+  overflow-x:auto;overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.benefit-list::-webkit-scrollbar{display:none;}
+.benefit-list.is-dragging{cursor:grabbing;user-select:none;}
+.benefit-list.is-dragging .benefit{pointer-events:none;}
 .benefit-list > li{display:contents;}
+
+/* arrows — the design's pink chevron; centred on the icon circles */
+.car-arrow{
+  position:absolute;z-index:2;
+  top:calc(80 * var(--s));transform:translateY(-50%);
+  width:calc(72 * var(--s));height:calc(72 * var(--s));
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  transition:opacity .2s ease, background .15s ease;
+}
+.car-arrow img{width:calc(30 * var(--s));height:auto;}
+.car-next{left:calc(-130 * var(--s));}          /* RTL: “next” lies to the left */
+.car-prev{right:calc(-130 * var(--s));}
+.car-prev img{transform:scaleX(-1);}
+.car-arrow:hover:not(:disabled){background:rgba(0,31,255,.07);}
+.car-arrow:disabled{opacity:.25;cursor:default;}
+.car-arrow:focus-visible{outline:calc(3 * var(--s)) solid var(--pink);outline-offset:2px;}
+
 .benefit{
+  flex:none;
   width:calc(131 * var(--s));
   display:flex;flex-direction:column;align-items:center;
   gap:calc(6 * var(--s));
@@ -447,7 +481,9 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   .benefits-title{font-size:calc(23 * var(--s));white-space:nowrap;}
   .chev-down{margin:calc(8 * var(--s)) auto calc(3 * var(--s));width:calc(19 * var(--s));}
   /* the design shows 3 icons (Ø106, pitch 152, margins 71/69);
-     the 4th sits just off-screen and is revealed by swiping sideways */
+     the rest sit off-screen and are revealed by swiping sideways */
+  .benefit-carousel{width:100%;}
+  .car-arrow{display:none;}
   .benefit-list{
     width:100%;max-width:none;margin-inline:0;
     flex-wrap:nowrap;justify-content:flex-start;align-items:flex-start;
