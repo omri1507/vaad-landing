@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ועד עובדי פלאפון — ההסכם הקיבוצי 2026</title>
-<link rel="stylesheet" href="style.css?v=20261005a">
+<link rel="stylesheet" href="style.css?v=20261012c">
 </head>
 <body>
 
@@ -84,9 +84,10 @@
     <img class="chev-down" src="assets/chevron-down.png" alt="" aria-hidden="true">
 
     <div class="benefit-carousel">
-      <button type="button" class="car-arrow car-prev" aria-label="להטבות הקודמות" disabled>
+      <button type="button" class="car-arrow car-prev" aria-label="להטבות הקודמות">
         <img src="assets/chevron-strip.png" alt="">
       </button>
+      <div class="car-viewport">
       <ul class="benefit-list">
       <li>
         <button type="button" class="benefit"
@@ -161,6 +162,7 @@
         </button>
       </li>
       </ul>
+      </div>
       <button type="button" class="car-arrow car-next" aria-label="להטבות הבאות">
         <img src="assets/chevron-strip.png" alt="">
       </button>
@@ -272,79 +274,166 @@
   };
 })();
 
-/* ---- benefits carousel: arrows + mouse drag (touch scrolls natively) ---- */
+/* ---- benefits carousel: infinite, auto-advancing, edge fades,
+        arrows + drag/swipe. Runs before the popup binds its clicks so the
+        cloned items open the popup too. ---- */
 (function () {
-  var wrap = document.querySelector('.benefit-carousel');
-  if (!wrap) return;
-  var list = wrap.querySelector('.benefit-list');
-  var prev = wrap.querySelector('.car-prev');
-  var next = wrap.querySelector('.car-next');
-  var items = list.querySelectorAll('.benefit');
+  var car = document.querySelector('.benefit-carousel');
+  if (!car) return;
+  var vp = car.querySelector('.car-viewport');
+  var track = car.querySelector('.benefit-list');
+  var prev = car.querySelector('.car-prev');
+  var next = car.querySelector('.car-next');
+  var orig = Array.prototype.slice.call(track.children);
+  var n = orig.length;
+  if (n < 2) return;
 
-  // RTL scrollLeft runs 0 → negative in current browsers; normalise to a
-  // positive "distance from the start"
-  var sign = -1;
-  list.scrollLeft = -1;
-  if (list.scrollLeft === 0) sign = 1;
-  list.scrollLeft = 0;
+  // one cloned set on each side -> seamless loop
+  function cloneSet() {
+    var f = document.createDocumentFragment();
+    orig.forEach(function (li) {
+      var c = li.cloneNode(true);
+      c.setAttribute('aria-hidden', 'true');
+      c.querySelectorAll('button').forEach(function (b) {
+        b.tabIndex = -1; b.setAttribute('aria-hidden', 'true');
+      });
+      f.appendChild(c);
+    });
+    return f;
+  }
+  track.insertBefore(cloneSet(), track.firstChild);
+  track.appendChild(cloneSet());
 
-  function max() { return list.scrollWidth - list.clientWidth; }
-  function pos() { return Math.abs(list.scrollLeft); }
-  function pitch() {
-    if (items.length < 2) return list.clientWidth;
-    return Math.abs(items[1].getBoundingClientRect().left - items[0].getBoundingClientRect().left);
-  }
-  function go(d, smooth) {
-    d = Math.max(0, Math.min(max(), d));
-    list.scrollTo({ left: sign * d, behavior: smooth === false ? 'auto' : 'smooth' });
-  }
-  function snap(dir) {             // dir: +1 next, -1 prev, 0 nearest
-    var p = pitch();
-    var i = Math.round(pos() / p) + dir;
-    go(i * p);
-  }
-  function update() {
-    var p = pos(), m = max();
-    if (prev) prev.disabled = p <= 2;
-    if (next) next.disabled = p >= m - 2;
-  }
-  if (next) next.addEventListener('click', function () { snap(1); });
-  if (prev) prev.addEventListener('click', function () { snap(-1); });
-  list.addEventListener('scroll', update, { passive: true });
-  window.addEventListener('resize', update);
-  update();
+  var DELAY = 3200;                         // ms each benefit stays put
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var index = n, pitch = 0, timer = null;
+  var hold = { hover: false, focus: false, drag: false, modal: false };
 
-  // drag with the mouse (touch and pen already scroll natively)
-  var down = false, dragging = false, startX = 0, startPos = 0, pid = null;
-  list.addEventListener('pointerdown', function (e) {
-    if (e.pointerType !== 'mouse' || e.button !== 0) return;
-    down = true; dragging = false; pid = e.pointerId;
-    startX = e.clientX; startPos = pos();
+  function measure() {
+    var b = track.querySelectorAll('.benefit');
+    pitch = Math.abs(b[1].getBoundingClientRect().left - b[0].getBoundingClientRect().left);
+  }
+  // RTL track: moving it right (+x) brings the next items in from the left
+  function set(x, animate) {
+    track.classList.toggle('is-animating', !!animate);
+    track.style.transform = 'translate3d(' + x + 'px,0,0)';
+  }
+  function current() {
+    var t = getComputedStyle(track).transform;
+    if (!t || t === 'none') return index * pitch;
+    return new DOMMatrixReadOnly(t).m41;
+  }
+  function normalize() {
+    if (index >= 2 * n) index -= n;
+    else if (index < n) index += n;
+    else return;
+    set(index * pitch, false);
+    void track.offsetWidth;                 // commit before animating again
+  }
+  function step(d) {
+    normalize();
+    index += d;
+    set(index * pitch, true);
+  }
+  track.addEventListener('transitionend', function (e) {
+    if (e.target === track) normalize();
   });
-  list.addEventListener('pointermove', function (e) {
-    if (!down) return;
-    var dx = e.clientX - startX;
-    if (!dragging && Math.abs(dx) > 6) {
-      dragging = true;
-      list.classList.add('is-dragging');
-      try { list.setPointerCapture(pid); } catch (err) {}
+
+  // ---- autoplay ----
+  function running() {
+    return !reduce && !document.hidden &&
+      !hold.hover && !hold.focus && !hold.drag && !hold.modal;
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (running()) timer = setTimeout(function () { step(1); schedule(); }, DELAY);
+  }
+  car.addEventListener('pointerenter', function (e) {
+    if (e.pointerType === 'mouse') { hold.hover = true; schedule(); }
+  });
+  car.addEventListener('pointerleave', function (e) {
+    if (e.pointerType === 'mouse') { hold.hover = false; schedule(); }
+  });
+  car.addEventListener('focusin', function (e) {
+    if (!e.target.matches(':focus-visible')) return;
+    hold.focus = true; schedule();
+    // keyboard focus on a benefit that is in the fade -> bring it to the start
+    var li = e.target.closest('li');
+    if (li && li.parentNode === track) {
+      var k = Array.prototype.indexOf.call(track.children, li);
+      var visible = Math.max(1, Math.round(car.clientWidth / pitch));
+      if (k < index || k >= index + visible) { index = k; set(index * pitch, true); }
     }
-    // RTL: dragging to the right reveals the items further to the left
-    if (dragging) go(startPos + dx, false);
+  });
+  car.addEventListener('focusout', function () {
+    setTimeout(function () {
+      hold.focus = car.contains(document.activeElement) &&
+        document.activeElement.matches(':focus-visible');
+      schedule();
+    }, 0);
+  });
+  document.addEventListener('visibilitychange', schedule);
+  var modal = document.getElementById('benefitModal');
+  if (modal && window.MutationObserver) {
+    new MutationObserver(function () { hold.modal = !modal.hidden; schedule(); })
+      .observe(modal, { attributes: true, attributeFilter: ['hidden'] });
+  }
+
+  // ---- arrows ----
+  if (next) next.addEventListener('click', function () { step(1); schedule(); });
+  if (prev) prev.addEventListener('click', function () { step(-1); schedule(); });
+
+  // ---- drag (mouse) / swipe (touch); vertical swipes still scroll the page ----
+  var startX = 0, lastX = 0, base = 0, moved = false, pid = null;
+  vp.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    normalize();
+    base = current();
+    index = Math.round(base / pitch);
+    set(base, false);
+    startX = lastX = e.clientX; moved = false; pid = e.pointerId;
+    hold.drag = true; clearTimeout(timer);
+  });
+  vp.addEventListener('pointermove', function (e) {
+    if (!hold.drag || e.pointerId !== pid) return;
+    lastX = e.clientX;
+    var dx = lastX - startX;
+    if (!moved && Math.abs(dx) > 6) {
+      moved = true;
+      vp.classList.add('is-dragging');
+      try { vp.setPointerCapture(pid); } catch (err) {}
+    }
+    if (moved) set(base + dx, false);
   });
   function end() {
-    if (!down) return;
-    down = false;
-    list.classList.remove('is-dragging');
-    if (dragging) snap(0);
+    if (!hold.drag) return;
+    hold.drag = false;
+    vp.classList.remove('is-dragging');
+    if (moved) {
+      var dx = lastX - startX;
+      var i = Math.round((base + dx) / pitch);
+      // a short flick still moves one benefit
+      if (i === Math.round(base / pitch) && Math.abs(dx) > pitch * 0.12) i += dx > 0 ? 1 : -1;
+      index = i;
+      set(index * pitch, true);
+    }
+    schedule();
   }
-  list.addEventListener('pointerup', end);
-  list.addEventListener('pointercancel', end);
-  // a drag must not also count as a click on a benefit (which opens its popup)
-  list.addEventListener('click', function (e) {
-    if (dragging) { e.preventDefault(); e.stopPropagation(); dragging = false; }
+  vp.addEventListener('pointerup', end);
+  vp.addEventListener('pointercancel', end);
+  // a drag must not also count as a click (which opens the popup)
+  vp.addEventListener('click', function (e) {
+    if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
   }, true);
-  list.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  vp.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  // focus can make the browser scroll an overflow:hidden box — undo it
+  vp.addEventListener('scroll', function () { vp.scrollLeft = 0; });
+
+  function layout() { measure(); set(index * pitch, false); }
+  window.addEventListener('resize', layout);
+  layout();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+  schedule();
 })();
 
 /* ---- benefit popup ---- */

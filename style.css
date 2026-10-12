@@ -263,22 +263,32 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   width:calc(1087 * var(--s));max-width:100%;
   margin-inline:auto;
 }
-/* exactly 4 benefits fit the 1087px row (4×131 + 3×188); the rest scroll in.
-   24px side / 14px vertical padding keeps the hover lift + glow from being
-   clipped by the scroller, without moving anything visible. */
+/* 4 benefits sit fully visible in the 1087px design row (4×131 + 3×188).
+   The viewport reaches --car-fade further on each side; that extra band is a
+   fade, so benefits glide in and out of it instead of being cut off.
+   14px vertical padding keeps the hover lift from being clipped. */
+.benefit-carousel{--car-fade:calc(300 * var(--s));}
+.car-viewport{
+  margin-inline:calc(-1 * var(--car-fade));
+  padding-block:calc(14 * var(--s));
+  overflow:hidden;
+  touch-action:pan-y;                 /* horizontal drags are ours, vertical scroll the page */
+  cursor:grab;user-select:none;-webkit-user-select:none;
+  -webkit-mask-image:linear-gradient(to right,
+    transparent 0, #000 var(--car-fade), #000 calc(100% - var(--car-fade)), transparent 100%);
+          mask-image:linear-gradient(to right,
+    transparent 0, #000 var(--car-fade), #000 calc(100% - var(--car-fade)), transparent 100%);
+}
+.car-viewport.is-dragging{cursor:grabbing;}
 .benefit-list{
-  width:calc(100% + 48 * var(--s));margin-inline:calc(-24 * var(--s));
-  padding:calc(14 * var(--s)) calc(24 * var(--s));
   display:flex;justify-content:flex-start;align-items:flex-start;
   gap:calc(188 * var(--s));
-  overflow-x:auto;overflow-y:hidden;
-  overscroll-behavior-x:contain;
-  scrollbar-width:none;-ms-overflow-style:none;
+  padding-inline-start:var(--car-fade);   /* RTL: first benefit at the row's right edge */
+  will-change:transform;
 }
-.benefit-list::-webkit-scrollbar{display:none;}
-.benefit-list.is-dragging{cursor:grabbing;user-select:none;}
-.benefit-list.is-dragging .benefit{pointer-events:none;}
+.benefit-list.is-animating{transition:transform .8s cubic-bezier(.45,0,.2,1);}
 .benefit-list > li{display:contents;}
+.benefit img{-webkit-user-drag:none;}
 
 /* arrows — the design's pink chevron; centred on the icon circles */
 .car-arrow{
@@ -287,14 +297,15 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   width:calc(72 * var(--s));height:calc(72 * var(--s));
   display:flex;align-items:center;justify-content:center;
   border-radius:50%;
-  transition:opacity .2s ease, background .15s ease;
+  background:#fff;                    /* stays legible while benefits glide underneath */
+  box-shadow:0 calc(4 * var(--s)) calc(16 * var(--s)) rgba(0,31,255,.18);
+  transition:opacity .2s ease, box-shadow .15s ease, transform .15s ease;
 }
 .car-arrow img{width:calc(30 * var(--s));height:auto;}
 .car-next{left:calc(-130 * var(--s));}          /* RTL: “next” lies to the left */
 .car-prev{right:calc(-130 * var(--s));}
 .car-prev img{transform:scaleX(-1);}
-.car-arrow:hover:not(:disabled){background:rgba(0,31,255,.07);}
-.car-arrow:disabled{opacity:.25;cursor:default;}
+.car-arrow:hover{box-shadow:0 calc(6 * var(--s)) calc(20 * var(--s)) rgba(0,31,255,.32);}
 .car-arrow:focus-visible{outline:calc(3 * var(--s)) solid var(--pink);outline-offset:2px;}
 
 .benefit{
@@ -481,23 +492,14 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   .benefits-title{font-size:calc(23 * var(--s));white-space:nowrap;}
   .chev-down{margin:calc(8 * var(--s)) auto calc(3 * var(--s));width:calc(19 * var(--s));}
   /* the design shows 3 icons (Ø106, pitch 152, margins 71/69);
-     the rest sit off-screen and are revealed by swiping sideways */
-  .benefit-carousel{width:100%;}
+     the carousel runs full width and fades out across the side margins */
+  .benefit-carousel{width:100%;--car-fade:calc(69 * var(--s));}   /* = the design side margin */
   .car-arrow{display:none;}
+  .car-viewport{margin-inline:0;padding-block:calc(12 * var(--s));}
   .benefit-list{
-    width:100%;max-width:none;margin-inline:0;
-    flex-wrap:nowrap;justify-content:flex-start;align-items:flex-start;
     gap:calc(46 * var(--s));
-    padding-inline:calc(71 * var(--s)) calc(69 * var(--s));
-    /* horizontal only — overflow-y MUST be explicit, otherwise the browser
-       promotes it to `auto` and the row drifts vertically on a diagonal swipe */
-    padding-block:calc(12 * var(--s));   /* room for the hover/press lift */
-    overflow-x:auto;overflow-y:hidden;
-    overscroll-behavior-x:contain;overscroll-behavior-y:auto;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;-ms-overflow-style:none;
+    padding-inline-start:calc(71 * var(--s));
   }
-  .benefit-list::-webkit-scrollbar{display:none;}
   .benefit{width:calc(106 * var(--s));gap:calc(5 * var(--s));flex:none;}
   .benefit-ico{width:calc(106 * var(--s));height:calc(106 * var(--s));}
   .benefit-label{font-size:calc(23 * var(--s));}
