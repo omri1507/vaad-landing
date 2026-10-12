@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ועד עובדי פלאפון — ההסכם הקיבוצי 2026</title>
-<link rel="stylesheet" href="style.css?v=20261012c">
+<link rel="stylesheet" href="style.css?v=20261012d">
 </head>
 <body>
 
@@ -305,8 +305,9 @@
   track.appendChild(cloneSet());
 
   var DELAY = 3200;                         // ms each benefit stays put
+  var STEP_MS = 950;                        // glide time between benefits
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var index = n, pitch = 0, timer = null;
+  var index = n, pitch = 0, pos = 0, timer = null, raf = null;
   var hold = { hover: false, focus: false, drag: false, modal: false };
 
   function measure() {
@@ -314,30 +315,42 @@
     pitch = Math.abs(b[1].getBoundingClientRect().left - b[0].getBoundingClientRect().left);
   }
   // RTL track: moving it right (+x) brings the next items in from the left
-  function set(x, animate) {
-    track.classList.toggle('is-animating', !!animate);
+  function render(x) {
+    pos = x;
     track.style.transform = 'translate3d(' + x + 'px,0,0)';
   }
-  function current() {
-    var t = getComputedStyle(track).transform;
-    if (!t || t === 'none') return index * pitch;
-    return new DOMMatrixReadOnly(t).m41;
+  // the glide is driven frame-by-frame in JS, not by a CSS transition, so it
+  // can't be skipped by a missed transitionend or a style change mid-flight
+  function ease(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+  function glideTo(target, ms, done) {
+    stop();
+    if (reduce || ms <= 0) { render(target); if (done) done(); return; }
+    var from = pos, t0 = null;
+    function frame(t) {
+      if (t0 === null) t0 = t;
+      var p = Math.min(1, (t - t0) / ms);
+      render(from + (target - from) * ease(p));
+      if (p < 1) raf = requestAnimationFrame(frame);
+      else { raf = null; if (done) done(); }
+    }
+    raf = requestAnimationFrame(frame);
   }
+  // keep index inside the middle (original) set; shifting by a whole set is
+  // visually identical because the neighbours are clones
   function normalize() {
-    if (index >= 2 * n) index -= n;
-    else if (index < n) index += n;
-    else return;
-    set(index * pitch, false);
-    void track.offsetWidth;                 // commit before animating again
+    var shift = 0;
+    if (index >= 2 * n) shift = -n;
+    else if (index < n) shift = n;
+    if (!shift) return;
+    index += shift;
+    render(pos + shift * pitch);
   }
   function step(d) {
     normalize();
     index += d;
-    set(index * pitch, true);
+    glideTo(index * pitch, STEP_MS, normalize);
   }
-  track.addEventListener('transitionend', function (e) {
-    if (e.target === track) normalize();
-  });
 
   // ---- autoplay ----
   function running() {
@@ -362,7 +375,7 @@
     if (li && li.parentNode === track) {
       var k = Array.prototype.indexOf.call(track.children, li);
       var visible = Math.max(1, Math.round(car.clientWidth / pitch));
-      if (k < index || k >= index + visible) { index = k; set(index * pitch, true); }
+      if (k < index || k >= index + visible) { index = k; glideTo(index * pitch, STEP_MS, normalize); }
     }
   });
   car.addEventListener('focusout', function () {
@@ -387,10 +400,9 @@
   var startX = 0, lastX = 0, base = 0, moved = false, pid = null;
   vp.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    stop();                                 // grab it mid-glide where it is
     normalize();
-    base = current();
-    index = Math.round(base / pitch);
-    set(base, false);
+    base = pos;
     startX = lastX = e.clientX; moved = false; pid = e.pointerId;
     hold.drag = true; clearTimeout(timer);
   });
@@ -403,7 +415,7 @@
       vp.classList.add('is-dragging');
       try { vp.setPointerCapture(pid); } catch (err) {}
     }
-    if (moved) set(base + dx, false);
+    if (moved) render(base + dx);
   });
   function end() {
     if (!hold.drag) return;
@@ -415,7 +427,10 @@
       // a short flick still moves one benefit
       if (i === Math.round(base / pitch) && Math.abs(dx) > pitch * 0.12) i += dx > 0 ? 1 : -1;
       index = i;
-      set(index * pitch, true);
+      glideTo(index * pitch, 450, normalize);
+    } else {
+      index = Math.round(pos / pitch);      // a tap: settle wherever we were
+      glideTo(index * pitch, 300, normalize);
     }
     schedule();
   }
@@ -429,10 +444,18 @@
   // focus can make the browser scroll an overflow:hidden box — undo it
   vp.addEventListener('scroll', function () { vp.scrollLeft = 0; });
 
-  function layout() { measure(); set(index * pitch, false); }
+  // phones fire `resize` when the browser bar collapses while scrolling —
+  // only a real width change needs a re-layout
+  var lastW = 0;
+  function layout() {
+    var w = car.clientWidth;
+    if (w === lastW && pitch) return;
+    lastW = w;
+    stop(); normalize(); measure(); render(index * pitch);
+  }
   window.addEventListener('resize', layout);
   layout();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { lastW = 0; layout(); });
   schedule();
 })();
 

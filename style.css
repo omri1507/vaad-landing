@@ -286,7 +286,6 @@ body.menu-open .site-header{z-index:105;}   /* keep the X toggle above the drawe
   padding-inline-start:var(--car-fade);   /* RTL: first benefit at the row's right edge */
   will-change:transform;
 }
-.benefit-list.is-animating{transition:transform .8s cubic-bezier(.45,0,.2,1);}
 .benefit-list > li{display:contents;}
 .benefit img{-webkit-user-drag:none;}
 
