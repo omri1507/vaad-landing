@@ -304,8 +304,8 @@
   track.insertBefore(cloneSet(), track.firstChild);
   track.appendChild(cloneSet());
 
-  var DELAY = 3200;                         // ms each benefit stays put
-  var STEP_MS = 950;                        // glide time between benefits
+  var DELAY = 2000;                         // ms each benefit stays put
+  var STEP_MS = 800;                        // glide time between benefits
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var index = n, pitch = 0, pos = 0, timer = null, raf = null;
   var hold = { hover: false, focus: false, drag: false, modal: false };
